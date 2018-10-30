@@ -140,7 +140,7 @@ folders = Folders(arguments)
 
 for folder in folders:
 
-	files = FilesInFolder(folder, False)
+	files = FilesInFolder(folder, True)
 
 	for file in files:
 		for extension in langs:
