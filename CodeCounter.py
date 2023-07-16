@@ -1,172 +1,201 @@
 import os
 import sys
+import logging
+import colorlog
+from typing import Iterable
+from tqdm import tqdm
 
-codelines = {}
-codelines['ActionScript'] = [[], 0]
-codelines['Ada']          = [[], 0]
-codelines['Assembler']    = [[], 0]
-codelines['Basic']        = [[], 0]
-codelines['C']            = [[], 0]
-codelines['C header']     = [[], 0]
-codelines['C++']          = [[], 0]
-codelines['C++ header']   = [[], 0]
-codelines['C#']           = [[], 0]
-codelines['CSS']          = [[], 0]
-codelines['Cg']           = [[], 0]
-codelines['Cobol']        = [[], 0]
-codelines['CoffeeScript'] = [[], 0]
-codelines['Coq']          = [[], 0]
-codelines['CUDA']         = [[], 0]
-codelines['D']            = [[], 0]
-codelines['Dart']         = [[], 0]
-codelines['ECMAScript']   = [[], 0]
-codelines['Erlang']       = [[], 0]
-codelines['F#']           = [[], 0]
-codelines['Fortran']      = [[], 0]
-codelines['Go']           = [[], 0]
-codelines['GLSL']         = [[], 0]
-codelines['Groovy']       = [[], 0]
-codelines['Haskell']      = [[], 0]
-codelines['HLSL']         = [[], 0]
-codelines['HTML']         = [[], 0]
-codelines['Java']         = [[], 0]
-codelines['JavaScript']   = [[], 0]
-codelines['JSON']         = [[], 0]
-codelines['Kotlin']       = [[], 0]
-codelines['LaTeX']        = [[], 0]
-codelines['Lisp']         = [[], 0]
-codelines['Lua']          = [[], 0]
-codelines['Objective-C']  = [[], 0]
-codelines['OCaml']        = [[], 0]
-codelines['OpenCL']       = [[], 0]
-codelines['Pascal']       = [[], 0]
-codelines['Perl']         = [[], 0]
-codelines['Perl 6']       = [[], 0]
-codelines['PHP']          = [[], 0]
-codelines['PostScript']   = [[], 0]
-codelines['Python']       = [[], 0]
-codelines['Q']            = [[], 0]
-codelines['Q#']           = [[], 0]
-codelines['Ruby']         = [[], 0]
-codelines['Rust']         = [[], 0]
-codelines['Scala']        = [[], 0]
-codelines['Swift']        = [[], 0]
-codelines['TypeScript']   = [[], 0]
+# Create a custom formatter with colors
+formatter = colorlog.ColoredFormatter(
+    "%(log_color)s%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    log_colors={
+        'DEBUG': 'light_green',
+        'INFO': 'green',
+        'WARNING': 'yellow',
+        'ERROR': 'red',
+        'CRITICAL': 'bold_red'
+    }
+)
 
-langs = {}
-langs[('.as')]                         = codelines['ActionScript'][0]
-langs[('.adb', 'ads')]                 =  codelines['Ada'][0]
-langs[('.asm', '.masm', '.nasm')]      = codelines['Assembler'][0]
-langs[('.bas')]                        = codelines['Basic'][0]
-langs[('.c')]                          = codelines['C'][0]
-langs[('.h')]                          = codelines['C header'][0]
-langs[('.cpp', '.cxx', '.c++', '.cc')] = codelines['C++'][0]
-langs[('.hpp', '.hxx', '.h++', '.hh')] = codelines['C++ header'][0]
-langs[('.cs')]                         = codelines['C#'][0]
-langs[('.css')]                        = codelines['CSS'][0]
-langs[('.cg')]                         = codelines['Cg'][0]
-langs[('.cbl', '.cob', '.cpy')]        = codelines['Cobol'][0]
-langs[('.coffee', '.litcoffee')]       = codelines['CoffeeScript'][0]
-langs[('.v')]                          = codelines['Coq'][0]
-langs[('.cu', '.cuh', '.cuda')]        = codelines['CUDA'][0]
-langs[('.d')]                          = codelines['D'][0]
-langs[('.dart')]                       = codelines['Dart'][0]
-langs[('.es')]                         = codelines['ECMAScript'][0]
-langs[('.erl', '.hrl')]                = codelines['Erlang'][0]
-langs[('.fs', '.fsi', '.fsx')]         = codelines['F#'][0]
-langs[('fsscript')]                    = codelines['F#'][0]
-langs[('.f', '.for', '.f90')]          = codelines['Fortran'][0]
-langs[('.go')]                         = codelines['Go'][0]
-langs[('.glsl')]                       = codelines['GLSL'][0]
-langs[('.groovy')]                     = codelines['Groovy'][0]
-langs[('.hs', '.lhs')]                 = codelines['Haskell'][0]
-langs[('.hlsl')]                       = codelines['HLSL'][0]
-langs[('.html')]                       = codelines['HTML'][0]
-langs[('.java')]                       = codelines['Java'][0]
-langs[('.js', '.mjs')]                 = codelines['JavaScript'][0]
-langs[('.json')]                       = codelines['JSON'][0]
-langs[('.kt', '.kts')]                 = codelines['Kotlin'][0]
-langs[('.tex')]                        = codelines['LaTeX'][0]
-langs[('.lsp')]                        = codelines['Lisp'][0]
-langs[('.lua')]                        = codelines['Lua'][0]
-langs[('.m', '.mm')]                   = codelines['Objective-C'][0]
-langs[('.ml', '.mli')]                 = codelines['OCaml'][0]
-langs[('.cl')]                         = codelines['OpenCL'][0]
-langs[('.pp', '.pas')]                 = codelines['Pascal'][0]
-langs[('.pl', '.pm', '.t', '.pod')]    = codelines['Perl'][0]
-langs[('.p6', '.pl6', '.pm6')]         = codelines['Perl 6'][0]
-langs[('.php', '.phtml', '.php3')]     = codelines['PHP'][0]
-langs[('.php4', '.php5', '.php7')]     = codelines['PHP'][0]
-langs[('.phps', '.php-s', '.pht')]     = codelines['PHP'][0]
-langs[('.ps')]                         = codelines['PostScript'][0]
-langs[('.py')]                         = codelines['Python'][0]
-langs[('.q')]                          = codelines['Q'][0]
-langs[('.qs')]                         = codelines['Q#'][0]
-langs[('.rb')]                         = codelines['Ruby'][0]
-langs[('.rs', '.rlib')]                = codelines['Rust'][0]
-langs[('.sc', '.scala')]               = codelines['Scala'][0]
-langs[('.swift')]                      = codelines['Swift'][0]
-langs[('.ts', '.tsx')]                 = codelines['TypeScript'][0]
+# Create a handler and set the formatter
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
 
-def Folders(args):
-	folders_list = []
+# Create the logger and add the handler
+logger = logging.getLogger()
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)
 
-	if len(args) is 0:
-		folders_list.append('.')
-	else:
-		for folder_name in args:
-			if os.path.isdir(folder_name):
-				folders_list.append(folder_name)
-			else:
-				print('Error:', folder_name, 'is not a directory')
-				sys.exit()
+# list of supported languages
+LANGUAGE_LIST = (
+    "ActionScript", "Ada", "Assembler",
+    "Basic", "C", "C header",
+    "C++", "C++ header",
+    "C#", "CSS", "Cg",
+    "Cobol", "CoffeeScript", "Coq",
+    "CUDA", "D", "Dart",
+    "ECMAScript", "Erlang", "F#",
+    "Fortran", "Go", "GLSL",
+    "Groovy", "Haskell", "HLSL",
+    "HTML", "Java", "JavaScript",
+    "JSON", "Kotlin", "LaTeX",
+    "Lisp", "Lua", "Objective-C",
+    "OCaml", "OpenCL", "Pascal",
+    "Perl", "Perl 6", "PHP",
+    "PostScript", "Python", "Q",
+    "Q#", "Ruby", "Rust",
+    "Scala", "Swift", "TypeScript"
+)
+# initialize every language with an empty list to hold all files and an empty line count
+counter_dict = {language:{"files": [], "line-count": 0} for language in LANGUAGE_LIST}
 
-	return folders_list
+# file extensions for every programming language
+# file extensions must be on the same index as language listed
+# above in LANGUAGE_LIST
+FILE_EXTENSION_LIST = (
+    ('.as'), ('.adb', 'ads'), ('.asm', '.masm', '.nasm'),
+    ('.bas'), ('.c'), ('.h'),
+    ('.cpp', '.cxx', '.c++', '.cc'), ('.hpp', '.hxx', '.h++', '.hh'),
+    ('.cs'), ('.css'), ('.cg'),
+    ('.cbl', '.cob', '.cpy'), ('.coffee', '.litcoffee'), ('.v'),
+    ('.cu', '.cuh', '.cuda'), ('.d'), ('.dart'),
+    ('.es'), ('.erl', '.hrl'), ('.fs', '.fsi', '.fsx'),
+    ('fsscript'), ('.f', '.for', '.f90'), ('.go'),
+    ('.glsl'), ('.groovy'), ('.hs', '.lhs'),
+    ('.hlsl'), ('.html'), ('.java'),
+    ('.js', '.mjs'), ('.json'), ('.kt', '.kts'),
+    ('.tex'), ('.lsp'), ('.lua'), ('.m', '.mm'),
+    ('.ml', '.mli'), ('.cl'), ('.pp', '.pas'),
+    ('.pl', '.pm', '.t', '.pod'), ('.p6', '.pl6', '.pm6'), ('.php', '.phtml', '.php3'),
+    ('.php4', '.php5', '.php7'), ('.phps', '.php-s', '.pht'), ('.ps'),
+    ('.py'), ('.q'), ('.qs'),
+    ('.rb'), ('.rs', '.rlib'), ('.sc', '.scala'),
+    ('.swift'), ('.ts', '.tsx')
+)
 
-def FilesInFolder(path, recursive):
-	files_list = []
+def add_extension_ref(extension_dict: dict, extensions: Iterable, language_ref: dict):
+    """
+    To avoid later iterating over every language and their file extension
+    we add a reference from every file extension as a key referring
+    to the same language, so we just have to access a single dict
 
-	if recursive is True:
-		for root, dirs, files in os.walk(path):
-			for filename in files:
-				files_list.append(filename)
-	else:
-		files_list = os.listdir(path)
+    Args:
+        extension_dict (dict): the extension_dict with all references
+        extensions (tuple): the file extensions of this language
+        language_ref (dict): a reference to the languages counter
+    """
+    for extension in extensions:
+        extension_dict[extension] = language_ref["files"]
 
-	return files_list
+# initialize a reference table to refer to a specific programming language based on the file extension
+extension_dict = {}
+for extensions, language in zip(FILE_EXTENSION_LIST, counter_dict.values()):
+    add_extension_ref(extension_dict, extensions, language)
 
-def LinesInLang(lang):
-	for file in codelines[lang][0]:
-		codelines[lang][1] += sum(1 for line in open(file))
 
-arguments = sys.argv[1:]
+def check_directory_paths(args: Iterable) -> list:
+    """
+    Check all given paths in the folder
+    if the folder is empty return an empty list
+    if one of the given paths is invalid it will show an error and `sys.exit`
+    otherwise it will return a new list with paths
 
-folders = Folders(arguments)
+    Args:
+        args (Iterable): a list with paths to check
+
+    Returns:
+        list: a copy of the given path list
+    """
+    folders_list = []
+
+    if len(args) == 0:
+        return []
+
+    for folder_name in args:
+        if os.path.isdir(folder_name):
+            folders_list.append(folder_name)
+            continue
+
+        logging.critical(f"{folder_name} is not a directory")
+        sys.exit()
+
+    return folders_list
+
+def FilesInFolder(path: str, recursive: bool) -> list:
+    """
+    Return a list with exact paths to every file in the given path
+    if the recursive flag is set to `True`, it will search the full directory
+    otherwise just the given path without any sub-folders
+
+    Args:
+        path (str): the path where to search in
+        recursive (bool): search only given path or search the given directory
+
+    Returns:
+        list: all files whether only this path or the whole directory
+    """
+    files_list = []
+
+    if recursive is True:
+        for root, dirs, files in tqdm(os.walk(path), desc=f"Finding files in {path}:", unit="file"):
+            for filename in files:
+                files_list.append(os.path.join(root, filename))
+    else:
+        files_list = os.listdir(path)
+
+    return files_list
+
+def LinesInLang(lang: dict):
+    """
+    Count the lines of every file that's listed in the files list of the given
+    counter ref and save the sum into line-count
+
+    Args:
+        lang (dict): a reference to the language counter
+    """
+    for file in tqdm(lang["files"], desc="Counting...", unit="Files"):
+        try:
+            lang["line-count"] += sum(1 for line in open(file, "r", errors="ignore"))
+        except UnicodeDecodeError:
+            logging.error(f"there was an error reading: {file}")
+
+arguments = sys.argv[1:]  # read user args
+
+logging.info("Validate input")
+folders = check_directory_paths(arguments)  # check the folders
 
 for folder in folders:
+    logging.info(f"Start counting files for dir {folder}")
+    files = FilesInFolder(folder, True)
+    skipped_extensions = set()
 
-	files = FilesInFolder(folder, True)
+    for file in files:
+        file_split = file.split(".")
+        if len(file_split) <= 1:
+            continue
+        extension = "." + file_split[-1]
+        extension_dict_ref = extension_dict.get(extension)
+        if extension_dict_ref is None:
+            logging.warning(f"skipping extension {extension}: {file}")
+            skipped_extensions.add(extension)
+        else:
+            logging.info(f"Found extension {extension}: {file}")
+            extension_dict_ref.append(file)
 
-	for file in files:
-		for extension in langs:
-			if file.lower().endswith(extension):
-				langs[extension].append(file)
+    total_lines = 0
+    successfully_counted = []
 
-	total_lines = int(0)
+    for lang in counter_dict:
+        logging.info(f"counting lines for {lang}")
+        counter_ref = counter_dict[lang]
+        LinesInLang(counter_ref)
 
-	for lang in codelines:
-		LinesInLang(lang)
+        total_lines += counter_ref["line-count"]
 
-		total_lines += codelines[lang][1]
+        if counter_ref["line-count"] != 0:
+            successfully_counted.append(f"{lang}: {counter_ref['line-count']} lines")
 
-		if codelines[lang][1] is not 0:
-			print(lang + ':', codelines[lang][1])
-
-	print('')
-	print('Total:', total_lines)
-
-
-
-
-
-
+    logging.warning(f"\nSkipped extensions:\n{', '.join(sorted(skipped_extensions))}")
+    logging.info(f"\n" + "\n".join(successfully_counted))
+    logging.info(f'Total:{total_lines}')
